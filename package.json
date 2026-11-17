@@ -1,0 +1,1 @@
+{"description":"Solmar Heat — a sun-soaked open-world crime caper for the make.fun gta6-01 bounty","license":"MIT","name":"solmar-heat","scripts":{"dossier":"node main.ts","start":"node serve.ts"},"type":"module","version":"1.0.0"}
