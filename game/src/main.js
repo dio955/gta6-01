@@ -527,10 +527,12 @@ function shotSetup() {
     vehicles.enterCar(car, G);
     car.speed = 16;
     economy.setCash(0, 0);
-    // Two traffic cars on the same avenue ahead, so the shot shows traffic.
+    // Two traffic cars on the same avenue far ahead, so the shot shows
+    // traffic without blocking the player's car (a car spawned in the
+    // player's path gets rear-ended and both stall on the crosswalk).
     const nodes = city.roadGraph.nodes;
-    const n1 = nodes.find((n) => n.x === -23 && n.z === -23);
-    const n2 = nodes.find((n) => n.x === -23 && n.z === 23);
+    const n1 = nodes.find((n) => n.x === -23 && n.z === -69);
+    const n2 = nodes.find((n) => n.x === -23 && n.z === -115);
     if (n1) traffic.spawnOne(n1);
     if (n2) traffic.spawnOne(n2);
     G.camYaw = Math.PI;
