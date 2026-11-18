@@ -330,16 +330,28 @@ function objectiveText() {
   return 'Free roam';
 }
 
-function stepSim(dt) {
-  G.time += dt;
-  G.playTime += dt;
-  // Keys.
+function handleStateKeys() {
+  // E continues from the busted / wasted / game-complete overlays, or
+  // interacts while playing. Escape pauses / resumes. This must run even
+  // when the sim is frozen (stepSim only runs while playing), so frame()
+  // calls it too for the overlay states.
   if (input.pressed('KeyE')) {
     if (G.state === 'busted') respawnAt(0, -96, 150);
     else if (G.state === 'wasted') respawnAt(-108, 0, 150);
     else if (G.state === 'complete') { G.state = 'playing'; hud.hideOverlay(); input.requestLock(); }
     else if (G.state === 'playing') interact();
   }
+  if (input.pressed('Escape') && !input.locked) {
+    if (G.state === 'playing') { G.state = 'paused'; hud.showPause(audio.muted); input.exitLock(); }
+    else if (G.state === 'paused') { G.state = 'playing'; hud.hidePause(); input.requestLock(); }
+  }
+}
+
+function stepSim(dt) {
+  G.time += dt;
+  G.playTime += dt;
+  // Keys.
+  handleStateKeys();
   if (input.pressed('KeyR') && player.onFoot && player.reloadTimer <= 0 && player.ammo < player.ammoMax) {
     player.reloadTimer = 1.1;
     audio.reload();
@@ -350,10 +362,6 @@ function stepSim(dt) {
     hud.banner(audio.muted ? 'MUTED' : 'SOUND ON', '', 1.2);
   }
   if (input.pressed('KeyC') && !player.onFoot) G.camFar = !G.camFar;
-  if (input.pressed('Escape') && !input.locked) {
-    if (G.state === 'playing') { G.state = 'paused'; hud.showPause(audio.muted); input.exitLock(); }
-    else if (G.state === 'paused') { G.state = 'playing'; hud.hidePause(); input.requestLock(); }
-  }
   // Mouse look.
   const md = input.mouseDelta();
   if (input.locked) {
@@ -367,6 +375,12 @@ function stepSim(dt) {
   }
   player.step(dt, G);
   vehicles.step(dt, G);
+  // While driving, keep player.pos glued to the car: police targeting,
+  // wanted decay, mission radius checks and the minimap all read
+  // player.pos, which used to freeze at the spot the car was entered.
+  if (!player.onFoot && player.car) {
+    player.pos.set(player.car.group.position.x, 0, player.car.group.position.z);
+  }
   traffic.step(dt, G);
   peds.step(dt, G);
   police.step(dt, G);
@@ -489,6 +503,10 @@ function frame(now) {
     G.camYaw += dtMs / 1000 * 0.02;
     camera.position.set(Math.sin(G.camYaw) * 90, 45, Math.cos(G.camYaw) * 90 + 40);
     camera.lookAt(0, 12, -20);
+  } else if (G.state === 'busted' || G.state === 'wasted' || G.state === 'complete' || G.state === 'paused') {
+    // The sim is frozen in these states, so stepSim never runs — read the
+    // overlay keys here instead (E to continue, Esc to resume from pause).
+    handleStateKeys();
   }
   if (G.state !== 'menu') updateCamera();
   updateHud();
