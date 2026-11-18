@@ -572,6 +572,18 @@ function shotSetup() {
   }
 }
 
+// Read-only handle for automated tests (QA, screenshots): game state,
+// player position, wanted level, cash and the current mission. It never
+// writes anything and changes nothing about the game.
+window.__solmar = {
+  state: () => G.state,
+  player: () => ({ x: player.pos.x, z: player.pos.z, onFoot: player.onFoot, health: player.health, ammo: player.ammo }),
+  wanted: () => wanted.stars,
+  cash: () => economy.cash,
+  mission: () => ({ state: missions.missionState, index: missions.currentIndex, step: missions.stepIndex, timer: missions.timerLeft }),
+  cars: () => vehicles.cars.length,
+};
+
 if (SHOT) {
   void SEED;
   shotSetup();
