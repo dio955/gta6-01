@@ -552,8 +552,12 @@ function shotSetup() {
 if (SHOT) {
   void SEED;
   shotSetup();
-  renderer.render(scene, camera);
+  // The rAF loop never runs in shot mode, so position the camera here
+  // (chase cam behind the car for drive/chase, staged view for mission)
+  // before rendering; without this the camera stays at the origin (0,0,0).
+  updateCamera();
   updateHud();
+  renderer.render(scene, camera);
   renderer.render(scene, camera);
   window.__shotReady = true;
 } else {
