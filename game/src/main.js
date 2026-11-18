@@ -527,6 +527,12 @@ function shotSetup() {
     vehicles.enterCar(car, G);
     car.speed = 16;
     economy.setCash(0, 0);
+    // Two traffic cars on the same avenue ahead, so the shot shows traffic.
+    const nodes = city.roadGraph.nodes;
+    const n1 = nodes.find((n) => n.x === -23 && n.z === -23);
+    const n2 = nodes.find((n) => n.x === -23 && n.z === 23);
+    if (n1) traffic.spawnOne(n1);
+    if (n2) traffic.spawnOne(n2);
     G.camYaw = Math.PI;
     player.health = 100;
     for (let i = 0; i < 90; i++) stepSim(STEP);
@@ -534,21 +540,21 @@ function shotSetup() {
     const car = vehicles.spawnCar('sedan', 23, 10, Math.PI, { npc: null });
     vehicles.enterCar(car, G);
     car.speed = 22;
-    car.health = 55;
+    car.health = 35;
     economy.setCash(1200, 1200);
     wanted.setStars(3);
     missions.start(2, G);
-    const pc1 = vehicles.spawnCar('police', 23, 28, Math.PI, { npc: 'police' });
-    const pc2 = vehicles.spawnCar('police', 19, 34, Math.PI, { npc: 'police' });
+    const pc1 = vehicles.spawnCar('police', 23, 20, Math.PI, { npc: 'police' });
+    const pc2 = vehicles.spawnCar('police', 20, 24, Math.PI, { npc: 'police' });
     police.policeCars.push(pc1, pc2);
     pc1.targetSpeed = 30; pc2.targetSpeed = 30;
     G.camYaw = Math.PI;
-    for (let i = 0; i < 60; i++) stepSim(STEP);
+    for (let i = 0; i < 45; i++) stepSim(STEP);
     // Stage the camera ahead of the player's car, looking back south, so
     // the two pursuing Interceptors and their light bars are in the frame.
     const pp = car.group.position;
     G.shotCam = {
-      pos: new THREE.Vector3(pp.x + 3, 4.2, pp.z - 16),
+      pos: new THREE.Vector3(pp.x + 2, 3.6, pp.z - 11),
       look: new THREE.Vector3(pp.x, 1.2, pp.z + 8),
     };
   } else if (SHOT === 'mission') {
