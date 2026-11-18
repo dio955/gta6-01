@@ -378,6 +378,9 @@ function stepSim(dt) {
   // While driving, keep player.pos glued to the car: police targeting,
   // wanted decay, mission radius checks and the minimap all read
   // player.pos, which used to freeze at the spot the car was entered.
+  // With a frozen pos the cops would arrest a ghost at the entry spot,
+  // wanted never decayed out of sight, and the M4/M5 car deliveries
+  // (radius checks against player.pos) could never complete.
   if (!player.onFoot && player.car) {
     player.pos.set(player.car.group.position.x, 0, player.car.group.position.z);
   }
