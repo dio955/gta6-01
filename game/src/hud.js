@@ -24,7 +24,13 @@ export function createHud() {
   let stolenTimer = null;
   const callbacks = { onPlay: null, onContinue: null, onResume: null, onSave: null, onRestart: null, onQuit: null, onMute: null };
 
-  function show(el) { if (el) el.style.display = ''; }
+  // show() must set an explicit display: several HUD elements are
+  // display:none in the stylesheet, so clearing the inline style ('')
+  // would leave them hidden. Overlays need flex for their centring.
+  function show(el) {
+    if (!el) return;
+    el.style.display = el.classList.contains('overlay') ? 'flex' : 'block';
+  }
   function hide(el) { if (el) el.style.display = 'none'; }
 
   const hud = {
@@ -61,7 +67,7 @@ export function createHud() {
       if (text) { els.prompt.textContent = text; show(els.prompt); }
       else hide(els.prompt);
     },
-    crosshair(showIt) { els.crosshair.style.display = showIt ? '' : 'none'; },
+    crosshair(showIt) { els.crosshair.style.display = showIt ? 'block' : 'none'; },
     banner(title, sub = '', dur = 3) {
       els.bannerTitle.textContent = title;
       els.bannerSub.textContent = sub;
