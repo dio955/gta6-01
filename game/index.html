@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Solmar Heat — a sun-soaked open-world crime caper</title>
+<style>
+  html, body { margin: 0; padding: 0; overflow: hidden; background: #20242b; height: 100%; }
+  #game-canvas { display: block; width: 100vw; height: 100vh; }
+  #hud { position: fixed; inset: 0; pointer-events: none; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; color: #ece7db; }
+  .panel { background: rgba(20, 24, 30, 0.62); border: 1px solid rgba(236, 231, 219, 0.22); border-radius: 8px; padding: 8px 12px; }
+  #objective-box { position: absolute; top: 14px; left: 14px; max-width: 340px; }
+  #objective-title { font-size: 11px; letter-spacing: 2px; color: #f0a830; font-weight: 700; }
+  #objective-text { font-size: 15px; margin-top: 2px; }
+  #cash { font-size: 18px; font-weight: 800; color: #7fae5a; margin-top: 4px; }
+  #timer { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); font-size: 22px; font-weight: 800; color: #ffd700; display: none; }
+  #stars { position: absolute; top: 44px; left: 50%; transform: translateX(-50%); font-size: 26px; letter-spacing: 2px; }
+  #stars .star { color: rgba(236, 231, 219, 0.35); }
+  #stars .star.on { color: #ffd700; }
+  #stars.pursued .star.on { animation: blink 0.5s steps(2) infinite; }
+  @keyframes blink { 50% { opacity: 0.35; } }
+  #minimap-wrap { position: absolute; top: 14px; right: 14px; }
+  #minimap { width: 200px; height: 200px; border-radius: 8px; border: 1px solid rgba(236, 231, 219, 0.3); display: block; }
+  #health-box { position: absolute; left: 14px; bottom: 14px; width: 220px; }
+  #health-bar { height: 12px; background: rgba(0, 0, 0, 0.5); border-radius: 6px; overflow: hidden; margin-top: 4px; }
+  #health-fill { height: 100%; width: 100%; background: #7fae5a; }
+  #health-num { font-size: 13px; color: #9aa1a8; }
+  #drive-info { position: absolute; right: 14px; bottom: 14px; text-align: right; display: none; }
+  #speed { font-size: 26px; font-weight: 800; }
+  #car-name { font-size: 13px; color: #9aa1a8; }
+  #car-health-bar { height: 8px; width: 180px; background: rgba(0, 0, 0, 0.5); border-radius: 4px; overflow: hidden; margin-top: 4px; margin-left: auto; }
+  #car-health-fill { height: 100%; width: 100%; background: #f0a830; }
+  #crosshair { position: absolute; left: 50%; top: 50%; width: 18px; height: 18px; margin: -9px 0 0 -9px; display: none; }
+  #crosshair::before, #crosshair::after { content: ""; position: absolute; background: #ece7db; }
+  #crosshair::before { left: 8px; top: 0; width: 2px; height: 18px; }
+  #crosshair::after { top: 8px; left: 0; width: 18px; height: 2px; }
+  #prompt { position: absolute; left: 50%; bottom: 18%; transform: translateX(-50%); font-size: 17px; font-weight: 700; background: rgba(20, 24, 30, 0.7); padding: 8px 16px; border-radius: 8px; display: none; }
+  #banner { position: absolute; left: 50%; top: 24%; transform: translateX(-50%); text-align: center; opacity: 0; }
+  #banner.show { animation: bannerIn 0.35s ease-out forwards; }
+  @keyframes bannerIn { from { opacity: 0; transform: translateX(-50%) scale(0.92); } to { opacity: 1; transform: translateX(-50%) scale(1); } }
+  #banner-title { font-size: 44px; font-weight: 900; letter-spacing: 3px; color: #f0a830; text-shadow: 0 2px 12px rgba(0, 0, 0, 0.7); }
+  #banner-sub { font-size: 18px; margin-top: 4px; text-shadow: 0 1px 6px rgba(0, 0, 0, 0.8); }
+  #stolen-flash { position: absolute; left: 50%; top: 58%; transform: translateX(-50%); font-size: 30px; font-weight: 900; letter-spacing: 4px; color: #ff5a4e; text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8); display: none; }
+  .overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(10, 14, 20, 0.72); pointer-events: auto; text-align: center; }
+  .overlay h1 { font-size: 64px; margin: 0; letter-spacing: 6px; color: #f0a830; text-shadow: 0 4px 24px rgba(0, 0, 0, 0.8); }
+  .overlay h2 { font-size: 20px; font-weight: 400; color: #ece7db; margin: 8px 0 24px; }
+  .overlay p { max-width: 520px; color: #9aa1a8; line-height: 1.5; }
+  .overlay button { pointer-events: auto; display: block; margin: 8px auto; min-width: 260px; padding: 12px 20px; font-size: 17px; font-weight: 700; color: #20242b; background: #f0a830; border: none; border-radius: 8px; cursor: pointer; }
+  .overlay button:hover { background: #ffd27a; }
+  .overlay button.secondary { background: rgba(236, 231, 219, 0.16); color: #ece7db; }
+  .controls { font-size: 14px; color: #9aa1a8; line-height: 1.9; margin-top: 18px; }
+  .controls b { color: #ece7db; }
+  #overlay-title { font-size: 56px; }
+  #overlay-sub { font-size: 18px; color: #ece7db; }
+  #overlay-hint { font-size: 15px; color: #9aa1a8; margin-top: 18px; }
+</style>
+<script type="importmap">
+{ "imports": { "three": "./vendor/three/three.module.min.js" } }
+</script>
+</head>
+<body>
+<canvas id="game-canvas"></canvas>
+<div id="hud">
+  <div id="objective-box" class="panel">
+    <div id="objective-title">OBJECTIVE</div>
+    <div id="objective-text">Go to the yellow marker to start 'First Wheels'</div>
+    <div id="cash">$0</div>
+  </div>
+  <div id="timer">⏱ 2:00</div>
+  <div id="stars"></div>
+  <div id="minimap-wrap"><canvas id="minimap" width="200" height="200"></canvas></div>
+  <div id="health-box" class="panel">
+    <div>HEALTH <span id="health-num">100</span></div>
+    <div id="health-bar"><div id="health-fill"></div></div>
+  </div>
+  <div id="drive-info" class="panel">
+    <div id="speed">0 km/h</div>
+    <div id="car-name">Sedan</div>
+    <div id="car-health-bar"><div id="car-health-fill"></div></div>
+  </div>
+  <div id="crosshair"></div>
+  <div id="prompt"></div>
+  <div id="banner"><div id="banner-title"></div><div id="banner-sub"></div></div>
+  <div id="stolen-flash">STOLEN</div>
+
+  <div id="menu" class="overlay" style="display:none">
+    <h1>SOLMAR HEAT</h1>
+    <h2>A sun-soaked open-world crime caper</h2>
+    <p>You are Rex Calloway, getaway driver for hire. Steal cars, outrun the
+    Solmar PD, and run five jobs for the fixer Mara Voss — from a first stolen
+    hatchback to the Falcon GT, the one big score.</p>
+    <button id="btn-new">New Game</button>
+    <button id="btn-continue" class="secondary" style="display:none">Continue</button>
+    <div class="controls">
+      <b>WASD</b> move / drive &nbsp;·&nbsp; <b>Mouse</b> look &nbsp;·&nbsp; <b>Click</b> shoot<br>
+      <b>Shift</b> sprint &nbsp;·&nbsp; <b>Space</b> handbrake &nbsp;·&nbsp; <b>E</b> enter car / interact<br>
+      <b>R</b> reload &nbsp;·&nbsp; <b>C</b> driving camera &nbsp;·&nbsp; <b>M</b> mute &nbsp;·&nbsp; <b>Esc</b> pause
+    </div>
+  </div>
+
+  <div id="pause" class="overlay" style="display:none">
+    <h1 style="font-size:44px">PAUSED</h1>
+    <button id="btn-resume">Resume</button>
+    <button id="btn-save" class="secondary">Save Game</button>
+    <button id="btn-restart" class="secondary">Restart Mission</button>
+    <button id="btn-quit" class="secondary">Quit to Menu</button>
+    <button id="btn-mute" class="secondary">Mute (M)</button>
+  </div>
+
+  <div id="overlay" class="overlay" style="display:none">
+    <h1 id="overlay-title">BUSTED</h1>
+    <h2 id="overlay-sub"></h2>
+    <p id="overlay-hint">Press E to continue</p>
+  </div>
+</div>
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>
