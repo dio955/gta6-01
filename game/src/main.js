@@ -59,6 +59,7 @@ const G = {
   scene, camera, renderer, city, player, vehicles, traffic, peds, police,
   wanted, missions, economy, hud, minimap, audio, save, input,
   time: 0, playTime: 0, camYaw: Math.PI, camPitch: 0.25, camDist: 9, camFar: false,
+  shotCam: null,
   state: 'menu',
   onBusted: null, onWasted: null, onGameComplete: null, saveGame: null,
 };
@@ -408,6 +409,13 @@ function stepSim(dt) {
 }
 
 function updateCamera() {
+  // Staged shot camera (chase shot): a fixed viewpoint set by shotSetup,
+  // looking back at the player's car so the pursuing police are in frame.
+  if (G.shotCam) {
+    camera.position.copy(G.shotCam.pos);
+    camera.lookAt(G.shotCam.look);
+    return;
+  }
   const target = tmpV;
   if (player.onFoot) {
     const dist = 6.5;
@@ -536,6 +544,13 @@ function shotSetup() {
     pc1.targetSpeed = 30; pc2.targetSpeed = 30;
     G.camYaw = Math.PI;
     for (let i = 0; i < 60; i++) stepSim(STEP);
+    // Stage the camera ahead of the player's car, looking back south, so
+    // the two pursuing Interceptors and their light bars are in the frame.
+    const pp = car.group.position;
+    G.shotCam = {
+      pos: new THREE.Vector3(pp.x + 3, 4.2, pp.z - 16),
+      look: new THREE.Vector3(pp.x, 1.2, pp.z + 8),
+    };
   } else if (SHOT === 'mission') {
     economy.setCash(2400, 2400);
     const car = vehicles.spawnCar('van', 104, 6, Math.PI / 2, { npc: null });
